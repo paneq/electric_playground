@@ -1,0 +1,21 @@
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+
+[http]
+  [http.routers]
+    [http.routers.electric]
+      rule = "PathPrefix(`/electric`)"
+      service = "electric"
+      entryPoints = ["web"]
+      middlewares = ["forwardAuth"]
+
+  [http.services]
+    [http.services.electric.loadBalancer]
+      [[http.services.electric.loadBalancer.servers]]
+        url = "http://electric:3000"
+
+  [http.middlewares]
+    [http.middlewares.forwardAuth.forwardAuth]
+      address = "http://host.docker.internal:4000/electric-authorization"
+
