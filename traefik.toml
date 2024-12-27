@@ -1,3 +1,12 @@
+[log]
+  level = "TRACE"
+
+[accessLog]
+
+[api]
+  insecure = true
+  dashboard = true
+
 [entryPoints]
   [entryPoints.web]
     address = ":80"
@@ -10,10 +19,19 @@
       entryPoints = ["web"]
       middlewares = ["stripElectricPrefix", "forwardAuth"]
 
+    [http.routers.todo]
+      rule = "PathPrefix(`/`)"
+      service = "todo"
+      entryPoints = ["web"]
+
   [http.services]
     [http.services.electric.loadBalancer]
       [[http.services.electric.loadBalancer.servers]]
         url = "http://electric:3000"
+
+    [http.services.todo.loadBalancer]
+      [[http.services.todo.loadBalancer.servers]]
+        url = "http://host.docker.internal:4000"
 
   [http.middlewares]
     [http.middlewares.forwardAuth.forwardAuth]
@@ -21,3 +39,7 @@
 
     [http.middlewares.stripElectricPrefix.stripPrefix]
       prefixes = ["/electric"]
+
+[providers]
+  [providers.file]
+    filename = "/etc/traefik/traefik.toml"
