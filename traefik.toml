@@ -8,7 +8,7 @@
       rule = "PathPrefix(`/electric`)"
       service = "electric"
       entryPoints = ["web"]
-      middlewares = ["forwardAuth"]
+      middlewares = ["stripElectricPrefix", "forwardAuth"]
 
   [http.services]
     [http.services.electric.loadBalancer]
@@ -19,3 +19,5 @@
     [http.middlewares.forwardAuth.forwardAuth]
       address = "http://host.docker.internal:4000/electric-authorization"
 
+    [http.middlewares.stripElectricPrefix.stripPrefix]
+      prefixes = ["/electric"]
