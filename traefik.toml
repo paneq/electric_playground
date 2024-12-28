@@ -13,6 +13,11 @@
 
 [http]
   [http.routers]
+    [http.routers.frontend]
+      rule = "PathPrefix(`/frontend`)"
+      service = "frontend"
+      entryPoints = ["web"]
+
     [http.routers.electric]
       rule = "PathPrefix(`/electric`)"
       service = "electric"
@@ -32,6 +37,10 @@
     [http.services.todo.loadBalancer]
       [[http.services.todo.loadBalancer.servers]]
         url = "http://host.docker.internal:4000"
+
+    [http.services.frontend.loadBalancer]
+      [[http.services.frontend.loadBalancer.servers]]
+        url = "http://host.docker.internal:5000"
 
   [http.middlewares]
     [http.middlewares.forwardAuth.forwardAuth]
