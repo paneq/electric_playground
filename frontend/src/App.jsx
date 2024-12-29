@@ -1,34 +1,39 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
+const handleSubmit = async (event, taskName, setTaskName) => {
+  event.preventDefault()
+  const response = await fetch('/tasks', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ task: { name: taskName, done: false } }),
+  })
+  if (response.ok) {
+    const newTask = await response.json()
+    console.log('Task created:', newTask)
+    setTaskName('') // Clear the input field after successful submission
+  } else {
+    console.error('Failed to create task')
+  }
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [taskName, setTaskName] = useState('')
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div>
+      <form onSubmit={(event) => handleSubmit(event, taskName, setTaskName)}>
+        <input
+          type="text"
+          value={taskName}
+          onChange={(e) => setTaskName(e.target.value)}
+          placeholder="Task name"
+        />
+        <button type="submit">Create Task</button>
+      </form>
+    </div>
   )
 }
 
