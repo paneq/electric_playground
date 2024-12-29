@@ -1,29 +1,54 @@
 import { useState, memo } from 'react'
 import './App.css'
-
 import { useShape } from '@electric-sql/react'
 
-function Task({ task }) {
+const handleCheckboxChange = async (task, event) => {
+    event.preventDefault()
+    const updatedTask = {
+        done: event.target.checked
+    }
+    const response = await fetch(`/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ task: updatedTask }),
+    })
+    if (response.ok) {
+        console.log('Task updated:', updatedTask)
+    } else {
+        console.error('Failed to update task')
+    }
+}
+
+function Task({ task, onCheckboxChange }) {
     return (
         <div className="flex items-center space-x-2 p-2 bg-base-200 rounded-lg shadow">
-            <input type="checkbox" defaultChecked={task.done} className="checkbox checkbox-primary" />
+            <input
+                type="checkbox"
+                checked={task.done}
+                className="checkbox checkbox-primary"
+                onChange={(event) => onCheckboxChange(task, event)}
+            />
             <span className="text-lg">{task.name}</span>
         </div>
     )
 }
 
 const TasksList = memo(() => {
-    const {data} = useShape({
+    const { data } = useShape({
         url: `http://localhost/electric/v1/shape`,
         params: {
             table: `tasks`
         }
     })
 
-    console.log(data);
+    console.log(data)
     return (
         <div className="space-y-2">
-            {data.map((task) => <Task key={task.id.toString()} task={task}/>)}
+            {data.map((task) => (
+                <Task key={task.id.toString()} task={task} onCheckboxChange={handleCheckboxChange} />
+            ))}
         </div>
     )
 })
