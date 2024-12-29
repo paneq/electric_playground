@@ -1,5 +1,30 @@
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import './App.css'
+
+import { useShape } from '@electric-sql/react'
+
+function Task({ task }) {
+    return (
+        <div>
+          <input type="checkbox" defaultChecked={task.done} />
+          <span>{task.name}</span>
+        </div>
+    )
+}
+
+const TasksList = memo(() => {
+  const {data} = useShape({
+    url: `http://localhost/electric/v1/shape`,
+    params: {
+      table: `tasks`
+    }
+  })
+
+  console.log(data);
+  return (
+      data.map((task) => <Task key={task.id.toString()} task={task}/>)
+  )
+})
 
 const handleSubmit = async (event, taskName, setTaskName) => {
   event.preventDefault()
@@ -33,8 +58,13 @@ function App() {
         />
         <button type="submit">Create Task</button>
       </form>
+
+      <TasksList />
     </div>
   )
 }
 
 export default App
+
+
+
