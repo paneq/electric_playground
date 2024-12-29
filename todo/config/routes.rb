@@ -13,4 +13,5 @@ Rails.application.routes.draw do
   # root "posts#index"
 
   get '/electric-authorization', to: 'electric_authorization#index'
+  resources :tasks
 end
