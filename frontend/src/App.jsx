@@ -2,6 +2,8 @@ import { useState, memo } from 'react'
 import './App.css'
 import { useShape } from '@electric-sql/react'
 
+const currentUserId = 1
+
 const handleCheckboxChange = async (task, event) => {
     event.preventDefault()
     const updatedTask = {
@@ -39,7 +41,8 @@ const TasksList = memo(() => {
     const { data } = useShape({
         url: `http://localhost/electric/v1/shape`,
         params: {
-            table: `tasks`
+            table: `tasks`,
+            where: `user_id = ${currentUserId}`
         }
     })
 
