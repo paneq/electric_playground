@@ -5,30 +5,21 @@ class SqlConditionValidatorTest < ActiveSupport::TestCase
     @validator = SqlConditionValidator.new
   end
 
-  test "accepts valid WHERE clause with user_id and parenthesized condition" do
+  test "accepts valid WHERE clause with root AND, and user_id check on the left side" do
     valid_queries = [
       "SELECT * FROM users WHERE user_id = 1 AND (foo = bar)",
       "SELECT * FROM users WHERE user_id = 42 AND (status = 'active')",
       "SELECT * FROM users WHERE user_id = 999 AND (created_at > '2024-01-01')",
       "SELECT * FROM users WHERE user_id = 1 AND (points >= 100)",
       "SELECT * FROM users WHERE user_id = 1 AND (foo = bar OR baz = qux)",
+      "SELECT * FROM users WHERE user_id = 1 AND (foo = bar AND baz = qux)",
+      "SELECT * FROM users WHERE user_id = 1 AND foo = bar",
+      "SELECT * FROM users WHERE user_id = 1 AND status = 'active'"
     ]
 
     valid_queries.each do |query|
       assert @validator.validate_where_clause(query),
              "Expected to accept valid query: #{query}"
-    end
-  end
-
-  test "rejects WHERE clause without parentheses around second condition" do
-    invalid_queries = [
-      "SELECT * FROM users WHERE user_id = 1 AND foo = bar",
-      "SELECT * FROM users WHERE user_id = 1 AND status = 'active'"
-    ]
-
-    invalid_queries.each do |query|
-      refute @validator.validate_where_clause(query),
-             "Expected to reject query without parentheses: #{query}"
     end
   end
 
@@ -38,7 +29,10 @@ class SqlConditionValidatorTest < ActiveSupport::TestCase
       "SELECT * FROM users WHERE email = 'test@test.com' AND (foo = bar)",
       "SELECT * FROM users WHERE user_id != 1 AND (foo = bar)",
       "SELECT * FROM users WHERE user_id > 1 AND (foo = bar)",
-      "SELECT * FROM users WHERE user_id AND (foo = bar)"
+      "SELECT * FROM users WHERE user_id AND (foo = bar)",
+      "SELECT * FROM users WHERE user_id IS NULL AND (foo = bar)",
+      "SELECT * FROM users WHERE user_id IS NOT NULL AND (foo = bar)",
+      "SELECT * FROM users WHERE user_id IN (1,2) AND (foo = bar)",
     ]
 
     invalid_queries.each do |query|
@@ -47,10 +41,12 @@ class SqlConditionValidatorTest < ActiveSupport::TestCase
     end
   end
 
-  test "rejects WHERE clause with OR conditions" do
+  test "rejects WHERE clause with root OR conditions" do
     invalid_queries = [
       "SELECT * FROM users WHERE user_id = 1 OR (foo = bar)",
       "SELECT * FROM users WHERE user_id = 1 AND (foo = bar) OR (user_id = 2)",
+      "SELECT * FROM users WHERE user_id = 1 AND foo = bar OR user_id = 2",
+      "SELECT * FROM users WHERE (user_id = 1 AND foo = bar) OR user_id = 2",
     ]
 
     invalid_queries.each do |query|
