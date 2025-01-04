@@ -23,35 +23,78 @@ const handleCheckboxChange = async (task, event) => {
     }
 }
 
-function Task({ task, onCheckboxChange }) {
+function Task({ task, comments, onCheckboxChange }) {
     return (
-        <div className="flex items-center space-x-2 p-2 bg-base-200 rounded-lg shadow">
-            <input
-                type="checkbox"
-                checked={task.done}
-                className="checkbox checkbox-primary"
-                onChange={(event) => onCheckboxChange(task, event)}
-            />
-            <span className="text-lg">{task.name}</span>
+        <div className="space-y-2">
+            <div className="flex items-center space-x-2 p-2 bg-base-200 rounded-lg shadow">
+                <input
+                    type="checkbox"
+                    checked={task.done}
+                    className="checkbox checkbox-primary"
+                    onChange={(event) => onCheckboxChange(task, event)}
+                />
+                <div className="flex-1">
+                    <span className="text-lg">{task.name}</span>
+                </div>
+            </div>
+
+            {comments.length > 0 && (
+                <div className="space-y-1">
+                    {comments.map(comment => (
+                        <Comment key={comment.id.toString()} comment={comment} />
+                    ))}
+                </div>
+            )}
         </div>
-    )
+    );
+}
+
+function Comment({ comment }) {
+    return (
+        <div className="ml-8 p-2 bg-base-100 rounded-md text-sm">
+            <div className="text-base-content/70">
+                {comment.body}
+            </div>
+        </div>
+    );
 }
 
 const TasksList = memo(() => {
-    const { data } = useShape({
+    const { data: taskData, isLoading: isLoadingTasks } = useShape({
         url: `http://localhost/electric/v1/shape`,
         params: {
             table: `tasks`,
             where: `user_id = ${currentUserId}`
         }
     })
+    // console.log(taskData)
+    const taskIds = taskData.map((task) => task.id.toString())
+    const { data: dataComments } = useShape({
+        url: `http://localhost/electric/v1/shape`,
+        params: {
+            table: `comments`,
+            where: `user_id = ${currentUserId} AND (task_id IN (${taskIds.join(',')}))`
+        }
+    })
+    // console.log(dataComments)
 
-    console.log(data)
     return (
         <div className="space-y-2">
-            {data.map((task) => (
-                <Task key={task.id.toString()} task={task} onCheckboxChange={handleCheckboxChange} />
-            ))}
+            {taskData.map((task) => {
+                const taskComments = dataComments.filter(comment => {
+                    console.log(comment.task_id.toString(), task.id.toString());
+                    return comment.task_id.toString() === task.id.toString();
+                });
+                console.log(taskComments);
+                return (
+                    <Task
+                        key={task.id.toString()}
+                        task={task}
+                        onCheckboxChange={handleCheckboxChange}
+                        comments={taskComments}
+                    />
+                );
+            })}
         </div>
     )
 })
