@@ -1,6 +1,8 @@
 import { useState, memo } from 'react'
 import './App.css'
 import { useShape } from '@electric-sql/react'
+import _ from 'lodash';
+import { useRef } from 'react';
 
 const currentUserId = 1
 
@@ -60,6 +62,9 @@ function Comment({ comment }) {
 }
 
 const TasksList = memo(() => {
+    const refTasks = useRef(['-1']);
+    const refAbort = useRef(new AbortController());
+
     const { data: taskData, isLoading: isLoadingTasks } = useShape({
         url: `http://localhost/electric/v1/shape`,
         params: {
@@ -67,25 +72,35 @@ const TasksList = memo(() => {
             where: `user_id = ${currentUserId}`
         }
     })
-    // console.log(taskData)
-    const taskIds = taskData.map((task) => task.id.toString())
-    const { data: dataComments } = useShape({
+    const taskIds = taskData.map((task) => task.id.toString()).sort()
+    taskIds.unshift('-1');
+
+    if (!_.isEqual(taskIds, refTasks.current)) {
+        console.log("detected change in task ids")
+        console.log("new", taskIds)
+        console.log("old", refTasks.current)
+        refAbort.current.abort()
+        refAbort.current = new AbortController()
+    } else {
+        console.log("detected same task ids")
+        console.log(taskIds)
+    }
+    let { data: dataComments, stream: commentsStream } = useShape({
+        signal: refAbort.current.signal,
         url: `http://localhost/electric/v1/shape`,
         params: {
             table: `comments`,
             where: `user_id = ${currentUserId} AND (task_id IN (${taskIds.join(',')}))`
         }
     })
-    // console.log(dataComments)
+    refTasks.current = taskIds;
 
     return (
         <div className="space-y-2">
             {taskData.map((task) => {
                 const taskComments = dataComments.filter(comment => {
-                    console.log(comment.task_id.toString(), task.id.toString());
                     return comment.task_id.toString() === task.id.toString();
                 });
-                console.log(taskComments);
                 return (
                     <Task
                         key={task.id.toString()}
