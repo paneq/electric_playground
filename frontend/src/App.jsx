@@ -62,7 +62,7 @@ function Comment({ comment }) {
 }
 
 const TasksList = memo(() => {
-    const refTasks = useRef(['-1']);
+    const refTasksIds = useRef([]);
     const refAbort = useRef(new AbortController());
 
     const { data: taskData, isLoading: isLoadingTasks } = useShape({
@@ -73,27 +73,28 @@ const TasksList = memo(() => {
         }
     })
     const taskIds = taskData.map((task) => task.id.toString()).sort()
-    taskIds.unshift('-1');
 
-    if (!_.isEqual(taskIds, refTasks.current)) {
+    if (!_.isEqual(taskIds, refTasksIds.current)) {
         console.log("detected change in task ids")
         console.log("new", taskIds)
-        console.log("old", refTasks.current)
+        console.log("old", refTasksIds.current)
         refAbort.current.abort()
         refAbort.current = new AbortController()
     } else {
         console.log("detected same task ids")
         console.log(taskIds)
     }
+    const shapeTaskIds = ['-1', ...taskIds]
     let { data: dataComments, stream: commentsStream } = useShape({
         signal: refAbort.current.signal,
         url: `http://localhost/electric/v1/shape`,
+        subscribe: taskIds.length > 0,
         params: {
             table: `comments`,
-            where: `user_id = ${currentUserId} AND (task_id IN (${taskIds.join(',')}))`
+            where: `user_id = ${currentUserId} AND (task_id IN (${shapeTaskIds.join(',')}))`,
         }
     })
-    refTasks.current = taskIds;
+    refTasksIds.current = taskIds;
 
     return (
         <div className="space-y-2">
