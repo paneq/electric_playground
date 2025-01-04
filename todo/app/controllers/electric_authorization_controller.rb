@@ -1,13 +1,11 @@
 class ElectricAuthorizationController < ApplicationController
   def index
-    path = request.headers['X-Forwarded-Uri']
-    uri = URI.parse(path)
-    electric_params = URI.decode_www_form(uri.query).to_h
     Rails.logger.info(electric_params.inspect)
 
-    authorized = case electric_params['table']
-    when 'tasks'
-      electric_params['where'] == "user_id = #{current_user.id}"
+    authorized = case table
+    when 'tasks', 'comments'
+      where == "user_id = #{current_user.id}" ||
+        SqlConditionValidator.new(current_user.id).validate_where_clause(where)
     else
       false
    end
@@ -18,10 +16,22 @@ class ElectricAuthorizationController < ApplicationController
      head :forbidden
    end
   end
+
+  private
+
+  def table
+    electric_params['table']
+  end
+
+  def where
+    electric_params['where']
+  end
+
+  def electric_params
+    @electric_params ||= begin
+      path = request.headers['X-Forwarded-Uri']
+      uri = URI.parse(path)
+      URI.decode_www_form(uri.query).to_h
+    end
+  end
 end
-
-
-# todo(dev)> PgQuery.parse("SELECT * FROM users WHERE user_id = 1").
-#   tree.stmts[0].stmt.select_stmt.where_clause.
-#   a_expr.rexpr.a_const.ival.ival
-# => 1
